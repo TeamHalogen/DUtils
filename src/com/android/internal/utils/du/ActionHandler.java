@@ -60,7 +60,6 @@ import android.util.Slog;
 import android.view.InputDevice;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
-import android.view.WindowManagerPolicyControl;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
@@ -358,13 +357,7 @@ public class ActionHandler {
         }
 
         private static void fireIntentAfterKeyguard(Intent intent) {
-            IStatusBarService service = getStatusBarService();
-            if (service != null) {
-                try {
-                    service.showCustomIntentAfterKeyguard(intent);
-                } catch (RemoteException e) {
-                }
-            }
+
         }
 
         private static void clearAllNotifications() {
@@ -665,19 +658,7 @@ public class ActionHandler {
 
 
     private static void toggleExpandedDesktop(Context context) {
-        ContentResolver cr = context.getContentResolver();
-        String newVal = "";
-        String currentVal = Settings.Global.getString(cr, Settings.Global.POLICY_CONTROL);
-        if (currentVal == null) {
-            currentVal = newVal;
-        }
-        if ("".equals(currentVal)) {
-            newVal = "immersive.full=*";
-        }
-        Settings.Global.putString(cr, Settings.Global.POLICY_CONTROL, newVal);
-        if (newVal.equals("")) {
-            WindowManagerPolicyControl.reloadFromSetting(context);
-        }
+
     }
 
     private static void launchVoiceSearch(Context context) {
@@ -831,58 +812,7 @@ public class ActionHandler {
     }
 
     private static void killProcess(Context context) {
-        if (context.checkCallingOrSelfPermission(android.Manifest.permission.FORCE_STOP_PACKAGES) == PackageManager.PERMISSION_GRANTED
-                && !isLockTaskOn()) {
-            try {
-                final Intent intent = new Intent(Intent.ACTION_MAIN);
-                String defaultHomePackage = "com.android.launcher";
-                intent.addCategory(Intent.CATEGORY_HOME);
-                final ResolveInfo res = context.getPackageManager()
-                        .resolveActivity(intent, 0);
-                if (res.activityInfo != null
-                        && !res.activityInfo.packageName.equals("android")) {
-                    defaultHomePackage = res.activityInfo.packageName;
-                }
-                IActivityManager am = ActivityManagerNative.getDefault();
-                boolean targetKilled = false;
-                List<RunningAppProcessInfo> apps = am.getRunningAppProcesses();
-                for (RunningAppProcessInfo appInfo : apps) {
-                    int uid = appInfo.uid;
-                    // Make sure it's a foreground user application (not system,
-                    // root, phone, etc.)
-                    if (uid >= Process.FIRST_APPLICATION_UID
-                            && uid <= Process.LAST_APPLICATION_UID
-                            && appInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                        if (appInfo.pkgList != null
-                                && (appInfo.pkgList.length > 0)) {
-                            for (String pkg : appInfo.pkgList) {
-                                if (!pkg.equals("com.android.systemui")
-                                        && !pkg.equals(defaultHomePackage)
-                                        && !pkg.equals("com.google.android.googlequicksearchbox")
-                                        && !isPackageLiveWalls(context, pkg)) {
-                                    am.forceStopPackage(pkg,
-                                            UserHandle.USER_CURRENT);
-                                    targetKilled = true;
-                                    break;
-                                }
-                            }
-                        } else {
-                            Process.killProcess(appInfo.pid);
-                            targetKilled = true;
-                        }
-                        if (targetKilled) {
-                            Toast.makeText(context, com.android.internal.R.string.app_killed_message,
-                                    Toast.LENGTH_SHORT).show();
-                            break;
-                        }
-                    }
-                }
-            } catch (RemoteException remoteException) {
-                Log.d("ActionHandler", "Caller cannot kill processes, aborting");
-            }
-        } else {
-            Log.d("ActionHandler", "Caller cannot kill processes, aborting");
-        }
+ 
     }
 
     private static boolean isPackageLiveWalls(Context ctx, String pkg) {

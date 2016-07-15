@@ -393,7 +393,7 @@ public class ActionConstants {
 
         @Override
         public String getUri() {
-            return Settings.Secure.FLING_GESTURE_ACTIONS;
+            return "";
         }
 
         @Override
